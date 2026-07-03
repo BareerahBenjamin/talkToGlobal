@@ -1,0 +1,197 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--foreground);
+  --color-warm: var(--warm);
+  --color-cream: var(--cream);
+  --color-border: var(--border);
+  --color-divider: var(--divider);
+  --color-input: var(--border);
+  --color-ring: var(--primary);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: #ffffff;
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+
+  --shadow-soft:
+    0 1px 2px rgba(30, 43, 26, 0.04), 0 8px 24px rgba(30, 43, 26, 0.06);
+  --shadow-float:
+    0 2px 6px rgba(30, 43, 26, 0.05), 0 16px 40px rgba(30, 43, 26, 0.08);
+
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  --background: #f8faf5;
+  --foreground: #1e2b1a;
+  --card: #ffffff;
+  --muted: #eef3e8;
+  --muted-foreground: #6c7b67;
+  --primary: #5a7f3d;
+  --primary-foreground: #ffffff;
+  --secondary: #87b55a;
+  --accent: #f6a623;
+  --warm: #ffd76a;
+  --cream: #f8f2e6;
+  --border: #eef3e8;
+  --divider: #eef3e8;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-divider);
+  }
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100dvh;
+  }
+}
+
+@utility card-soft {
+  background-color: var(--card);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+@utility btn-pill {
+  border-radius: 999px;
+  padding: 14px 22px;
+  font-weight: 600;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+@utility btn-pill-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 6px 18px rgba(90, 127, 61, 0.28);
+}
+@utility btn-pill-primary-hover {
+  background-color: #4d6f33;
+}
+
+/* Spark floating animations */
+@keyframes spark-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes spark-nod {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes spark-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  25% {
+    transform: translateX(-3px) rotate(-4deg);
+  }
+  75% {
+    transform: translateX(3px) rotate(4deg);
+  }
+}
+@keyframes spark-jump {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-14px) scale(1.05);
+  }
+  70% {
+    transform: translateY(0) scale(0.98);
+  }
+}
+@keyframes sound-wave {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-spark-float {
+  animation: spark-float 3.6s ease-in-out infinite;
+}
+.animate-spark-nod {
+  animation: spark-nod 1.2s ease-in-out infinite;
+}
+.animate-spark-shake {
+  animation: spark-shake 1.4s ease-in-out infinite;
+}
+.animate-spark-jump {
+  animation: spark-jump 0.9s ease-out;
+}
+.animate-fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
+.animate-twinkle {
+  animation: twinkle 1.6s ease-in-out infinite;
+}
