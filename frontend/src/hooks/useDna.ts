@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { extractDna, type DnaData } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DnaRecord extends DnaData {
   id: string;
@@ -12,21 +13,27 @@ interface DnaRecord extends DnaData {
 }
 
 export function useDna() {
+  const { user, loading: authLoading } = useAuth();
   const [dna, setDna] = useState<DnaRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDna = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Wait for auth to resolve before deciding there's no DNA — otherwise a
+    // freshly-restored session (e.g. logging in on a new device) would briefly
+    // read user=null, report "no DNA", and bounce the user into onboarding.
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
     if (!user) {
+      setDna(null);
       setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setError(null);
 
     const { data, error: fetchError } = await supabase
       .from("founder_dna")
@@ -43,7 +50,7 @@ export function useDna() {
     }
 
     setLoading(false);
-  }, []);
+  }, [user, authLoading]);
 
   useEffect(() => {
     fetchDna();
@@ -88,9 +95,14 @@ export function useDna() {
         throw updateError;
       }
 
-      await fetchDna();
+      // Merge locally instead of re-fetching. fetchDna() flips the global
+      // loading flag, which would flash the full "generating DNA" screen on
+      // every edit / language-style tap.
+      setDna((prev) =>
+        prev ? { ...prev, ...updates, updated_at: new Date().toISOString() } : prev,
+      );
     },
-    [dna, fetchDna],
+    [dna],
   );
 
   return {

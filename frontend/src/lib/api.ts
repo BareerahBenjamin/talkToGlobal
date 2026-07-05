@@ -64,14 +64,16 @@ export async function generateZh(input: {
   source_input: string;
   source_type: string;
   dna_id?: string;
+  signal_id?: string;
 }): Promise<{ versions: ZhVersion[] }> {
   return callFunction("generate-zh", input);
 }
 
-// ---- English Translation ----
+// ---- English Translation (X/Twitter, 3 founder-voice styles) ----
 
 export interface EnVersion {
-  platform: string;
+  style: string; // authority | story | sharp
+  style_label: string; // 权威专家型 | 创始人故事型 | 犀利观点型
   text: string;
 }
 
@@ -79,13 +81,34 @@ export async function generateEn(input: {
   zh_text: string;
   dna_id?: string;
   source_type?: string;
-  platforms?: string[];
+  style_label?: string;
 }): Promise<{ versions: EnVersion[] }> {
   return callFunction("generate-en", input);
 }
 
 // ---- Hot Signals ----
 
+// Real founder posts shown on the 热点资讯 page (hot_posts table)
+export interface HotPost {
+  id: string;
+  source_account: string | null; // @handle
+  author_name: string | null; // display name
+  content: string | null; // original post text
+  posted_at: string | null; // raw post time string
+  likes: number | null;
+  retweets: number | null;
+  replies: number | null;
+  views: string | null;
+  url: string | null; // original post link
+}
+
+export async function getHotPosts(
+  sourceAccount?: string,
+): Promise<{ posts: HotPost[] }> {
+  return callFunction("hot-posts", { source_account: sourceAccount });
+}
+
+// Founder-voice template rules (hot_signals table) — used by generation
 export interface HotSignal {
   id: string;
   title: string;
@@ -121,11 +144,25 @@ export async function extractDna(input: {
   return callFunction("extract-dna", input);
 }
 
+// ---- URL fetch (server-side, for reference links) ----
+
+export async function fetchUrl(
+  url: string,
+): Promise<{ title: string; text: string; url: string }> {
+  return callFunction("fetch-url", { url });
+}
+
 // ---- Transcription (mimo ASR) ----
 
 /** Convert webm/audio blob to wav format (MiMo ASR only supports wav/mp3) */
 async function blobToWav(blob: Blob): Promise<Blob> {
-  const audioCtx = new AudioContext();
+  // Safari exposes AudioContext only under the webkit prefix.
+  const AudioCtx =
+    (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+      .AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx) throw new Error("此浏览器不支持音频处理");
+  const audioCtx = new AudioCtx();
   const arrayBuffer = await blob.arrayBuffer();
   const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
   await audioCtx.close();

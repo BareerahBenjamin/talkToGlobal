@@ -27,13 +27,27 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Resolve interview: fall back to this user's most recent interview so the
+    // client can trigger extraction without threading ids across pages.
+    let interviewId = interview_id;
+    if (!interviewId) {
+      const { data: latest } = await supabase
+        .from("interviews")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      interviewId = latest?.id;
+    }
+
     // Collect interview conversation
     let conversationText = "";
-    if (interview_id) {
+    if (interviewId) {
       const { data: messages } = await supabase
         .from("interview_messages")
         .select("role, content")
-        .eq("interview_id", interview_id)
+        .eq("interview_id", interviewId)
         .order("created_at", { ascending: true });
 
       if (messages && messages.length > 0) {
@@ -43,16 +57,23 @@ serve(async (req) => {
       }
     }
 
-    // Collect materials
+    // Collect materials. When material_ids is omitted, use ALL of this user's
+    // materials (step 2 uploads), so reference files/links feed the DNA too.
     let materialsText = "";
-    if (material_ids && material_ids.length > 0) {
-      const { data: materials } = await supabase
+    {
+      let query = supabase
         .from("materials")
         .select("type, title, content")
-        .in("id", material_ids);
+        .eq("user_id", user.id);
+      if (material_ids && material_ids.length > 0) {
+        query = query.in("id", material_ids);
+      }
+      const { data: materials } = await query;
 
       if (materials && materials.length > 0) {
         materialsText = materials
+          // skip rows with no usable text (e.g. unparsed PDF/PPT uploads)
+          .filter((m) => (m.content || "").trim().length > 0)
           .map((m) => `[${m.type}] ${m.title || "无标题"}:\n${m.content || ""}`)
           .join("\n\n---\n\n");
       }
@@ -156,32 +177,65 @@ serve(async (req) => {
       { temperature: 0.5, maxTokens: 2000 }
     );
 
-    // Parse JSON from response
+    // Parse JSON from response. LLMs sometimes wrap the JSON in ```fences```,
+    // add a sentence before/after, or return other prose — so strip fences and
+    // fall back to extracting the outermost {...} block before giving up.
     let dna;
     try {
-      const jsonStr = result.content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      dna = JSON.parse(jsonStr);
+      let jsonStr = result.content
+        .replace(/```json?\n?/gi, "")
+        .replace(/```/g, "")
+        .trim();
+      try {
+        dna = JSON.parse(jsonStr);
+      } catch {
+        const start = jsonStr.indexOf("{");
+        const end = jsonStr.lastIndexOf("}");
+        if (start === -1 || end === -1 || end <= start) throw new Error("no JSON object found");
+        dna = JSON.parse(jsonStr.slice(start, end + 1));
+      }
     } catch {
-      throw new Error("Failed to parse LLM response as JSON");
+      throw new Error(
+        `Failed to parse LLM response as JSON. Raw: ${String(result.content).slice(0, 300)}`
+      );
     }
 
-    // Save to database
-    const { data: savedDna, error: saveError } = await supabase
+    // Save to database. founder_dna has no unique constraint on user_id, so
+    // upsert(onConflict: "user_id") errors with 42P10. Check for an existing
+    // row and update it, else insert.
+    const { data: existing } = await supabase
       .from("founder_dna")
-      .upsert(
-        {
-          user_id: user.id,
-          ...dna,
-          is_confirmed: false,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      )
-      .select()
-      .single();
+      .select("id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const row = {
+      ...dna,
+      is_confirmed: false,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: savedDna, error: saveError } = existing
+      ? await supabase
+          .from("founder_dna")
+          .update(row)
+          .eq("id", existing.id)
+          .select()
+          .single()
+      : await supabase
+          .from("founder_dna")
+          .insert({ user_id: user.id, ...row })
+          .select()
+          .single();
 
     if (saveError) {
       console.error("Failed to save DNA:", saveError);
+      return new Response(
+        JSON.stringify({ error: `Failed to save DNA: ${saveError.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(

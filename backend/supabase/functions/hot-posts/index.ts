@@ -1,4 +1,4 @@
-// Fetch hot signals (Twitter founder voice templates) for content generation
+// Fetch real founder posts (hot_posts) for the 热点资讯 page
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -18,7 +18,7 @@ serve(async (req) => {
       });
     }
 
-    const { rule_type, limit = 50 } = await req.json().catch(() => ({}));
+    const { source_account, limit = 50 } = await req.json().catch(() => ({}));
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -26,29 +26,29 @@ serve(async (req) => {
     );
 
     let query = supabase
-      .from("hot_signals")
+      .from("hot_posts")
       .select("*")
       .eq("is_active", true)
-      .order("created_at", { ascending: true });
+      .order("likes", { ascending: false });
 
-    if (rule_type) {
-      query = query.eq("rule_type", rule_type);
+    if (source_account) {
+      query = query.eq("source_account", source_account);
     }
 
     if (limit) {
       query = query.limit(limit);
     }
 
-    const { data: signals, error } = await query;
+    const { data: posts, error } = await query;
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ signals }), {
+    return new Response(JSON.stringify({ posts }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("hot-signals error:", err);
+    console.error("hot-posts error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

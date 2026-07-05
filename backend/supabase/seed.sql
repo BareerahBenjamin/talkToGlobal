@@ -4,7 +4,8 @@
 
 -- Clear existing data for clean re-seed
 delete from public.question_bank;
-delete from public.hot_signals;
+-- NOTE: hot_signals is fully managed by migration 006 (real founder posts);
+-- do NOT delete/re-seed it here or the migration's data would be wiped.
 
 -- ============================================================
 -- question_bank — MVP 采访问题库（10 题，控制在 5-8 分钟）
@@ -104,63 +105,11 @@ insert into public.question_bank (category, question, follow_up, sort_order, pur
    '你的看法和大多数人有什么不同？', 5,
    '提取 contrarian take 和 founder POV');
 
+
 -- ============================================================
--- hot_signals — Twitter 热点模版库
--- Source: material/twitter-hotpots-analysis.md
+-- hot_signals — 真实 Founder 推文（账号/原文/时间/转赞评/链接）
+-- Source: material/x-hotpots.md
+-- 数据由 migration 006_hot_signals_posts.sql 写入。seed 在迁移之后运行，
+-- 这里不再重复插入，以免覆盖迁移中的真实帖子。
+-- （migration 006 里已含 `delete from public.hot_signals;` + 15 条 insert）
 -- ============================================================
-
--- 10 条 Founder 发声规则（从 10 个顶尖帐号提炼）
-insert into public.hot_signals (title, source_account, rule_type, template, example, description) values
-
--- 内容架构类
-('框架感发声', '@karpathy @hwchase17', 'content_structure',
- '每条推文是微型框架，不是表态。',
- 'Something I''ve been finding very useful recently: [你的实践/框架]',
- '权威架构：个人实践声明 + 结构化的认知框架。长篇 thread 是建立权威的最高 ROI 手段。'),
-
-('数字替代形容词', '@levelsio @rauchg', 'content_structure',
- '用具体数字替代模糊描述。',
- '"125K MRR" > "增长很好"，"42% of the web" > "很多"',
- '最有力的 pitch = 一个公开的收入数字。在 bio 写产品 + MRR = 24/7 的 Founder 广告牌。'),
-
-('反转叙事', '@amasad', 'content_structure',
- '"我们曾 X → 我们变了 → 结果 Y"',
- '"我们曾经是 XXX 的工具，后来发现真正的市场是 YYY。ARR 从 200 万跌到谷底，转型后到了 1.44 亿。"',
- '把商业 pivot 公开讲，这本身是最好的内容。坦诚失败让 success 更有说服力。'),
-
-('趋势命名', '@swyx @karpathy', 'content_structure',
- '给正在发生的事取个名字。',
- 'Vibe Coding, Agentic Engineering, SaaSpocalypse',
- '最强大的发声 = 定义一个 category。用圈层语言建立身份归属。'),
-
-('哲理 + 产品交替', '@AravSrinivas', 'content_structure',
- '一句话哲理 + 产品信号交替发，ratio ≈ 1:1',
- '"Moving fast is essentially an expression of humility as you make frequent contact with reality"',
- 'CEO 个人号 ≠ 公司蓝 V。最高互动的不是产品发布，是你的世界观。'),
-
--- 开口方式类
-('个人实践开场', '@karpathy @simonw', 'opening',
- '以个人实践声明开头，天然可信。',
- '"Something I''ve been finding very useful recently..."',
- '不写「关于 XX 的看法」，写「我一直在用 XX 做 YY」。'),
-
-('设问确认钩子', '@rauchg', 'opening',
- '设问 + 确认 = 病毒钩子。',
- '"Can X do Y? Yes." / "The SaaSpocalypse? Both understated and overstated."',
- '一个可验证的 demo 胜过十篇 blog。用引爆性断言制造 tension，用产品交付消解 tension。'),
-
-('转变陈述', '@rauchg @amasad', 'opening',
- '"We used to X, now we''re Y"',
- '"We used to build tools for humans, now we''re building them for agents."',
- '转变陈述是 CEO 最有力的武器。不是「我认为」，而是「事实是」。'),
-
-('极简留白', '@roon @AravSrinivas', 'opening',
- '推文越短，解读空间越大。',
- '"fellow creators the creator seeks" — 简洁、留白、让人想解读',
- '留白 = 互动空间。偶尔的 cryptic 推文能建立「只有 we know」的社区归属感。'),
-
--- 证据互动类
-('可验证性', '@goodside @simonw', 'evidence',
- '展示过程和结果，而不仅仅是结论。',
- '"我试了 XX，结果是 YY。这是代码/数据/截图。"',
- '最权威的发声方式 = 展示过程和结果。把工作流公开 = 建立「言出必行」的可信度。');

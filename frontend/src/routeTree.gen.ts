@@ -12,13 +12,17 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as TrendingRouteImport } from './routes/trending'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as GenerateRouteImport } from './routes/generate'
 import { Route as DnaRouteImport } from './routes/dna'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContentIdRouteImport } from './routes/content.$id'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -33,6 +37,11 @@ const TrendingRoute = TrendingRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -55,6 +64,11 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GenerateRoute = GenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
@@ -65,99 +79,137 @@ const DnaRoute = DnaRouteImport.update({
   path: '/dna',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContentIdRoute = ContentIdRouteImport.update({
+  id: '/content/$id',
+  path: '/content/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/dna': typeof DnaRoute
   '/generate': typeof GenerateRoute
+  '/help': typeof HelpRoute
   '/home': typeof HomeRoute
   '/interview': typeof InterviewRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trending': typeof TrendingRoute
   '/upload': typeof UploadRoute
+  '/content/$id': typeof ContentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/dna': typeof DnaRoute
   '/generate': typeof GenerateRoute
+  '/help': typeof HelpRoute
   '/home': typeof HomeRoute
   '/interview': typeof InterviewRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trending': typeof TrendingRoute
   '/upload': typeof UploadRoute
+  '/content/$id': typeof ContentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/dna': typeof DnaRoute
   '/generate': typeof GenerateRoute
+  '/help': typeof HelpRoute
   '/home': typeof HomeRoute
   '/interview': typeof InterviewRoute
   '/library': typeof LibraryRoute
   '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trending': typeof TrendingRoute
   '/upload': typeof UploadRoute
+  '/content/$id': typeof ContentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/dna'
     | '/generate'
+    | '/help'
     | '/home'
     | '/interview'
     | '/library'
     | '/profile'
+    | '/settings'
     | '/sitemap.xml'
     | '/trending'
     | '/upload'
+    | '/content/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/dna'
     | '/generate'
+    | '/help'
     | '/home'
     | '/interview'
     | '/library'
     | '/profile'
+    | '/settings'
     | '/sitemap.xml'
     | '/trending'
     | '/upload'
+    | '/content/$id'
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/dna'
     | '/generate'
+    | '/help'
     | '/home'
     | '/interview'
     | '/library'
     | '/profile'
+    | '/settings'
     | '/sitemap.xml'
     | '/trending'
     | '/upload'
+    | '/content/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   DnaRoute: typeof DnaRoute
   GenerateRoute: typeof GenerateRoute
+  HelpRoute: typeof HelpRoute
   HomeRoute: typeof HomeRoute
   InterviewRoute: typeof InterviewRoute
   LibraryRoute: typeof LibraryRoute
   ProfileRoute: typeof ProfileRoute
+  SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrendingRoute: typeof TrendingRoute
   UploadRoute: typeof UploadRoute
+  ContentIdRoute: typeof ContentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -181,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -211,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/generate': {
       id: '/generate'
       path: '/generate'
@@ -225,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DnaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -232,20 +305,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/content/$id': {
+      id: '/content/$id'
+      path: '/content/$id'
+      fullPath: '/content/$id'
+      preLoaderRoute: typeof ContentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   DnaRoute: DnaRoute,
   GenerateRoute: GenerateRoute,
+  HelpRoute: HelpRoute,
   HomeRoute: HomeRoute,
   InterviewRoute: InterviewRoute,
   LibraryRoute: LibraryRoute,
   ProfileRoute: ProfileRoute,
+  SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrendingRoute: TrendingRoute,
   UploadRoute: UploadRoute,
+  ContentIdRoute: ContentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

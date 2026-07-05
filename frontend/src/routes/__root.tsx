@@ -86,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         {
           name: "description",
           content:
-            "远声 Talk To Global 是 AI 创始人 IP 助手,由 Spark 陪伴你把技术想法变成全球用户听得懂的英文表达。",
+            "远声 Talk To Global 是 AI 创始人 IP 助手,由 滚滚 陪伴你把技术想法变成全球用户听得懂的英文表达。",
         },
         { name: "theme-color", content: "#F8FAF5" },
         { property: "og:title", content: "远声 Talk To Global" },
@@ -103,7 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           rel: "stylesheet",
           href: appCss,
         },
-        { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+        { rel: "icon", href: "/favicon.png", type: "image/png" },
       ],
     }),
     shellComponent: RootShell,

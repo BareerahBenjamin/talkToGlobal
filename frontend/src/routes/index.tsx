@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { SparkMascot } from "@/components/SparkMascot";
+import { GunGunMascot } from "@/components/GunGunMascot";
 import { useAuth } from "@/hooks/useAuth";
 import { useDna } from "@/hooks/useDna";
 import { useContents } from "@/hooks/useContents";
@@ -24,21 +24,17 @@ const entries = [
   {
     type: "thinking",
     title: "聊聊今天思考",
-    desc: "把脑子里散乱的想法说出来",
-    tag: "TODAY",
+    desc: "记录灵感、想法或反思",
     bg: "linear-gradient(160deg, #5A7F3D 0%, #6E9548 100%)",
     fg: "#F8FAF5",
-    illo: (
-      <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
-        <circle cx="50" cy="50" r="30" fill="#FFD76A" opacity="0.9" />
-        <circle cx="42" cy="46" r="2.5" fill="#1E2B1A" />
-        <circle cx="58" cy="46" r="2.5" fill="#1E2B1A" />
+    badge: "rgba(255,255,255,0.18)",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
         <path
-          d="M42 58 Q50 66 58 58"
-          stroke="#1E2B1A"
-          strokeWidth="2"
-          strokeLinecap="round"
-          fill="none"
+          d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H9l-4 3.5V16H6.5"
+          stroke="#F8FAF5"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
         />
       </svg>
     ),
@@ -46,18 +42,18 @@ const entries = [
   {
     type: "market_signal",
     title: "回应市场信号",
-    desc: "把一条新闻或推文转成你的观点",
-    tag: "TRENDING",
+    desc: "针对新闻 / 趋势发表观点",
     bg: "#FFFFFF",
     fg: "#1E2B1A",
-    illo: (
-      <svg width="72" height="72" viewBox="0 0 100 100" fill="none">
-        <rect x="18" y="26" width="64" height="48" rx="10" fill="#F8F2E6" />
+    badge: "#EEF3E8",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
         <path
-          d="M28 42h44M28 52h30M28 62h20"
-          stroke="#B0770D"
-          strokeWidth="2.4"
+          d="M4 15l4-4 3 3 5-6 4 5"
+          stroke="#5A7F3D"
+          strokeWidth="1.9"
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </svg>
     ),
@@ -65,26 +61,23 @@ const entries = [
   {
     type: "product_progress",
     title: "分享产品进展",
-    desc: "把 changelog 变成一段温度感的英文",
-    tag: "SHIP",
-    bg: "#FFFFFF",
-    fg: "#1E2B1A",
-    illo: (
-      <svg width="72" height="72" viewBox="0 0 100 100" fill="none">
+    desc: "更新里程碑、功能或成绩",
+    bg: "linear-gradient(160deg, #FFE39A 0%, #F6C453 100%)",
+    fg: "#5A4211",
+    badge: "rgba(255,255,255,0.5)",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
         <path
-          d="M30 70l40-40M40 30h30v30"
-          stroke="#5A7F3D"
-          strokeWidth="3"
-          strokeLinecap="round"
+          d="M4 9v6h3l6 4V5L7 9H4Z"
+          stroke="#5A4211"
+          strokeWidth="1.8"
           strokeLinejoin="round"
         />
-        <circle
-          cx="50"
-          cy="50"
-          r="26"
-          stroke="#87B55A"
-          strokeWidth="2"
-          strokeDasharray="3 5"
+        <path
+          d="M17 9a4 4 0 0 1 0 6"
+          stroke="#5A4211"
+          strokeWidth="1.8"
+          strokeLinecap="round"
         />
       </svg>
     ),
@@ -92,7 +85,7 @@ const entries = [
 ];
 
 function Home() {
-  const { user, signUp, signIn } = useAuth();
+  const { user, signUp, signIn, loading: authLoading } = useAuth();
   const { dna, loading: dnaLoading } = useDna();
   const { contents } = useContents({ status: "draft" });
   const recentDrafts = contents.slice(0, 3);
@@ -100,6 +93,7 @@ function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
@@ -159,81 +153,136 @@ function Home() {
     }
   };
 
-  // Not logged in → show login/register
-  if (!user) {
+  // Auth still resolving (e.g. restoring a session on a new device) — show a
+  // neutral loading state rather than flashing the login or onboarding screens.
+  if (authLoading) {
     return (
       <AppLayout>
         <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <SparkMascot size={120} state="idle" />
-          <h1 className="text-[22px] font-semibold text-foreground mt-6 text-center">
-            远声
+          <GunGunMascot size={96} state="idle" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Not logged in → branded welcome + login/register
+  if (!user) {
+    return (
+      <AppLayout>
+        <div className="flex-1 flex flex-col items-center justify-center px-8 pt-10">
+          {/* Logo mark */}
+          <img
+            src="/favicon.png"
+            alt="Talk To Global"
+            className="h-[84px] w-[84px] rounded-[24px] shadow-[0_14px_32px_rgba(90,127,61,0.32)]"
+          />
+          <h1 className="text-[26px] font-bold text-foreground mt-6 tracking-tight">
+            Talk To Global
           </h1>
-          <p className="text-[14px] text-muted-foreground mt-2 text-center">
-            {isSignUp ? "创建账号开始使用" : "登录继续使用"}
+          <p className="text-[14px] text-muted-foreground mt-3 text-center leading-relaxed">
+            把你的技术想法
+            <br />
+            变成全球用户所看得懂的表达
           </p>
         </div>
+
         <div className="px-6 pb-10 space-y-3">
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email)
-                  setErrors((p) => ({ ...p, email: undefined }));
-              }}
-              placeholder="邮箱"
-              className={`w-full bg-card rounded-[18px] px-4 py-3.5 border text-[14px] outline-none transition ${
-                errors.email
-                  ? "border-destructive"
-                  : "border-divider focus:border-primary/40"
-              }`}
-              autoFocus
-            />
-            {errors.email && (
-              <p className="text-[12px] text-destructive mt-1 ml-1">
-                {errors.email}
-              </p>
-            )}
-          </div>
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (errors.password)
-                  setErrors((p) => ({ ...p, password: undefined }));
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              placeholder="密码"
-              className={`w-full bg-card rounded-[18px] px-4 py-3.5 border text-[14px] outline-none transition ${
-                errors.password
-                  ? "border-destructive"
-                  : "border-divider focus:border-primary/40"
-              }`}
-            />
-            {errors.password && (
-              <p className="text-[12px] text-destructive mt-1 ml-1">
-                {errors.password}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting || !email.trim() || !password.trim()}
-            className="block w-full text-center bg-primary text-primary-foreground rounded-pill py-4 text-[15px] font-semibold shadow-[0_10px_24px_rgba(90,127,61,0.28)] active:scale-[0.98] transition disabled:opacity-50"
-          >
-            {submitting ? "处理中..." : isSignUp ? "注册" : "登录"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="block w-full text-center text-[13px] text-muted-foreground"
-          >
-            {isSignUp ? "已有账号？去登录" : "没有账号？去注册"}
-          </button>
+          {!authOpen ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  toast("手机登录即将开放，请先用邮箱登录", { icon: "🌱" });
+                  setAuthOpen(true);
+                }}
+                className="block w-full text-center bg-primary text-primary-foreground rounded-pill py-4 text-[15px] font-semibold shadow-[0_10px_24px_rgba(90,127,61,0.28)] active:scale-[0.98] transition"
+              >
+                手机号登录 / 注册
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthOpen(true)}
+                className="block w-full text-center bg-card text-foreground border border-divider rounded-pill py-4 text-[15px] font-semibold active:scale-[0.98] transition"
+              >
+                使用邮箱登录
+              </button>
+            </>
+          ) : (
+            <>
+              <div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email)
+                      setErrors((p) => ({ ...p, email: undefined }));
+                  }}
+                  placeholder="邮箱"
+                  className={`w-full bg-card rounded-[18px] px-4 py-3.5 border text-[14px] outline-none transition ${
+                    errors.email
+                      ? "border-destructive"
+                      : "border-divider focus:border-primary/40"
+                  }`}
+                  autoFocus
+                />
+                {errors.email && (
+                  <p className="text-[12px] text-destructive mt-1 ml-1">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+              <div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password)
+                      setErrors((p) => ({ ...p, password: undefined }));
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  placeholder="密码"
+                  className={`w-full bg-card rounded-[18px] px-4 py-3.5 border text-[14px] outline-none transition ${
+                    errors.password
+                      ? "border-destructive"
+                      : "border-divider focus:border-primary/40"
+                  }`}
+                />
+                {errors.password && (
+                  <p className="text-[12px] text-destructive mt-1 ml-1">
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || !email.trim() || !password.trim()}
+                className="block w-full text-center bg-primary text-primary-foreground rounded-pill py-4 text-[15px] font-semibold shadow-[0_10px_24px_rgba(90,127,61,0.28)] active:scale-[0.98] transition disabled:opacity-50"
+              >
+                {submitting ? "处理中..." : isSignUp ? "注册" : "登录"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="block w-full text-center text-[13px] text-muted-foreground"
+              >
+                {isSignUp ? "已有账号？去登录" : "没有账号？去注册"}
+              </button>
+            </>
+          )}
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Logged in, DNA still loading → neutral loading (avoid onboarding flash)
+  if (dnaLoading) {
+    return (
+      <AppLayout>
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <GunGunMascot size={96} state="thinking" />
         </div>
       </AppLayout>
     );
@@ -244,7 +293,7 @@ function Home() {
     return (
       <AppLayout>
         <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <SparkMascot size={120} state="idle" />
+          <GunGunMascot size={120} state="idle" />
           <h1 className="text-[22px] font-semibold text-foreground mt-6 text-center">
             欢迎来到远声
           </h1>
@@ -277,62 +326,59 @@ function Home() {
               day: "numeric",
             })}
           </div>
-          <h1 className="text-[32px] font-semibold tracking-tight mt-1">
-            {greeting()}
+          <h1 className="text-[30px] font-bold tracking-tight mt-1">
+            今天想聊什么?
           </h1>
-          <p className="text-[14px] text-muted-foreground mt-1">
-            今天想聊点什么?
+          <p className="text-[14px] text-muted-foreground mt-1.5">
+            {greeting()}，选一个场景开启表达
           </p>
         </div>
         <div className="pt-1">
-          <SparkMascot size={64} state="idle" />
+          <GunGunMascot size={64} state="idle" />
         </div>
       </header>
 
-      <section className="px-5 mt-8 space-y-4">
-        {entries.map((e, i) => (
-          <Link
-            key={e.title}
-            to="/interview"
-            search={{ type: e.type }}
-            className={`block rounded-[28px] border border-divider/60 shadow-soft p-5 active:scale-[0.99] transition ${
-              i === 0 ? "min-h-[170px]" : ""
-            }`}
-            style={{ background: e.bg, color: e.fg }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <span
-                  className="inline-block text-[10.5px] font-semibold tracking-[0.14em] px-2.5 py-1 rounded-full"
-                  style={{
-                    background: i === 0 ? "rgba(255,255,255,0.16)" : "#EEF3E8",
-                    color: i === 0 ? "#F8FAF5" : "#5A7F3D",
-                  }}
+      <section className="px-5 mt-7 space-y-3.5">
+        {entries.map((e) => {
+          const linkProps =
+            e.type === "market_signal"
+              ? ({ to: "/trending" } as const)
+              : ({ to: "/interview", search: { type: e.type } } as const);
+          return (
+            <Link
+              key={e.title}
+              {...linkProps}
+              className="block rounded-[26px] border border-divider/50 shadow-soft p-5 active:scale-[0.99] transition"
+              style={{ background: e.bg, color: e.fg }}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[19px] font-bold leading-tight">
+                    {e.title}
+                  </h3>
+                  <p
+                    className="text-[13.5px] mt-1.5 leading-snug"
+                    style={{ color: e.fg, opacity: 0.78 }}
+                  >
+                    {e.desc}
+                  </p>
+                </div>
+                <div
+                  className="h-12 w-12 rounded-[16px] flex items-center justify-center shrink-0"
+                  style={{ background: e.badge }}
                 >
-                  {e.tag}
-                </span>
-                <h3 className="text-[19px] font-semibold mt-3 leading-tight">
-                  {e.title}
-                </h3>
-                <p
-                  className="text-[13.5px] mt-1.5 leading-snug"
-                  style={{
-                    color: i === 0 ? "rgba(248,250,245,0.85)" : "#6C7B67",
-                  }}
-                >
-                  {e.desc}
-                </p>
+                  {e.icon}
+                </div>
               </div>
-              <div className="shrink-0">{e.illo}</div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </section>
 
       <section className="px-6 mt-8">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-[13px] font-semibold text-foreground">
-            最近的草稿
+            最近记录
           </h4>
           <Link
             to="/library"
@@ -356,14 +402,14 @@ function Home() {
                   className="bg-card rounded-[20px] p-4 border border-divider/60 flex items-center gap-3"
                 >
                   <div className="h-10 w-10 rounded-[14px] bg-cream flex items-center justify-center">
-                    <SparkMascot size={28} state="idle" />
+                    <GunGunMascot size={28} state="idle" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[14px] font-medium truncate">
                       {text.slice(0, 40)}
                     </div>
                     <div className="text-[11.5px] text-muted-foreground mt-0.5">
-                      {formatDate(draft.created_at)} · Draft
+                      {formatDate(draft.created_at)} · 草稿
                     </div>
                   </div>
                 </div>

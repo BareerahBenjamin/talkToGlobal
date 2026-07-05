@@ -24,7 +24,11 @@ export interface Content {
   updated_at: string;
 }
 
-export function useContents(filter?: { status?: string; q?: string }) {
+export function useContents(filter?: {
+  status?: string;
+  sourceType?: string;
+  q?: string;
+}) {
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +54,10 @@ export function useContents(filter?: { status?: string; q?: string }) {
       query = query.eq("status", filter.status.toLowerCase());
     }
 
+    if (filter?.sourceType) {
+      query = query.eq("source_type", filter.sourceType);
+    }
+
     if (filter?.q) {
       query = query.or(
         `source_input.ilike.%${filter.q}%,edited_zh_text.ilike.%${filter.q}%`,
@@ -59,13 +67,23 @@ export function useContents(filter?: { status?: string; q?: string }) {
     const { data } = await query;
     setContents(data ?? []);
     setLoading(false);
-  }, [filter?.status, filter?.q]);
+  }, [filter?.status, filter?.sourceType, filter?.q]);
 
   useEffect(() => {
     fetchContents();
   }, [fetchContents]);
 
-  return { contents, loading, refetch: fetchContents };
+  const deleteContent = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from("contents").delete().eq("id", id);
+      if (error) throw error;
+      // Optimistically drop it from the list.
+      setContents((prev) => prev.filter((c) => c.id !== id));
+    },
+    [],
+  );
+
+  return { contents, loading, refetch: fetchContents, deleteContent };
 }
 
 export function useContentGeneration() {
@@ -75,7 +93,12 @@ export function useContentGeneration() {
   const [error, setError] = useState<string | null>(null);
 
   const generateChinese = useCallback(
-    async (input: string, sourceType: string, dnaId?: string) => {
+    async (
+      input: string,
+      sourceType: string,
+      dnaId?: string,
+      signalId?: string,
+    ) => {
       setGenerating(true);
       setError(null);
       try {
@@ -83,6 +106,7 @@ export function useContentGeneration() {
           source_input: input,
           source_type: sourceType,
           dna_id: dnaId,
+          signal_id: signalId,
         });
         setZhVersions(result.versions);
         return result.versions;
@@ -101,7 +125,7 @@ export function useContentGeneration() {
       zhText: string,
       dnaId?: string,
       sourceType?: string,
-      platforms = ["x", "linkedin"],
+      styleLabel?: string,
     ) => {
       setGenerating(true);
       setError(null);
@@ -110,7 +134,7 @@ export function useContentGeneration() {
           zh_text: zhText,
           dna_id: dnaId,
           source_type: sourceType,
-          platforms,
+          style_label: styleLabel,
         });
         setEnVersions(result.versions);
         return result.versions;

@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { SparkMascot } from "@/components/SparkMascot";
+import { GunGunMascot } from "@/components/GunGunMascot";
 import { useContents, type Content } from "@/hooks/useContents";
 
 export const Route = createFileRoute("/library")({
@@ -11,10 +11,16 @@ export const Route = createFileRoute("/library")({
 
 function Library() {
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<"All" | "Draft" | "Published">("All");
+  const [filter, setFilter] = useState<
+    "all" | "thinking" | "market_signal" | "product_update"
+  >("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "published"
+  >("all");
 
   const { contents, loading } = useContents({
-    status: filter === "All" ? undefined : filter,
+    sourceType: filter === "all" ? undefined : filter,
+    status: statusFilter === "all" ? undefined : statusFilter,
     q: q || undefined,
   });
 
@@ -54,15 +60,37 @@ function Library() {
   const sourceLabel = (type: string | null) => {
     switch (type) {
       case "thinking":
-        return "💬 今日思考";
+        return "今日思考";
       case "market_signal":
-        return "🔥 市场信号";
+        return "市场信号";
+      case "product_progress":
       case "product_update":
-        return "🚀 产品进展";
+        return "产品进展";
+      case "interview":
+        return "Founder DNA";
       default:
-        return "💬 内容";
+        return "内容";
     }
   };
+
+  const TABS: {
+    key: "all" | "thinking" | "market_signal" | "product_update";
+    label: string;
+  }[] = [
+    { key: "all", label: "全部" },
+    { key: "thinking", label: "今日思考" },
+    { key: "market_signal", label: "市场信号" },
+    { key: "product_update", label: "产品进展" },
+  ];
+
+  const STATUS_TABS: {
+    key: "all" | "draft" | "published";
+    label: string;
+  }[] = [
+    { key: "all", label: "全部" },
+    { key: "draft", label: "草稿" },
+    { key: "published", label: "已发布" },
+  ];
 
   return (
     <AppLayout showNav>
@@ -123,19 +151,37 @@ function Library() {
         </div>
       </div>
 
-      <div className="px-6 mt-4 flex gap-2">
-        {(["All", "Draft", "Published"] as const).map((f) => (
+      <div className="mt-4 flex gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {TABS.map((f) => (
           <button
-            key={f}
+            key={f.key}
             type="button"
-            onClick={() => setFilter(f)}
-            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition ${
-              filter === f
+            onClick={() => setFilter(f.key)}
+            className={`shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-[12.5px] font-medium transition ${
+              filter === f.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-muted-foreground border border-divider"
             }`}
           >
-            {f}
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-6 mt-3 flex items-center gap-2">
+        <span className="text-[11.5px] text-muted-foreground shrink-0">状态</span>
+        {STATUS_TABS.map((s) => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => setStatusFilter(s.key)}
+            className={`shrink-0 whitespace-nowrap px-3 py-1 rounded-full text-[12px] font-medium transition ${
+              statusFilter === s.key
+                ? "bg-accent/15 text-[#B0770D] border border-accent/40"
+                : "bg-card text-muted-foreground border border-divider"
+            }`}
+          >
+            {s.label}
           </button>
         ))}
       </div>
@@ -155,9 +201,9 @@ function Library() {
         </div>
       ) : contents.length === 0 ? (
         <div className="flex flex-col items-center text-center px-6 py-14">
-          <SparkMascot size={100} state="empty" />
+          <GunGunMascot size={100} state="empty" />
           <p className="text-[14px] text-muted-foreground mt-4">
-            {q ? "没有找到匹配的内容" : "这里还没有内容，Spark 会一直等你。"}
+            {q ? "没有找到匹配的内容" : "这里还没有内容，滚滚 会一直等你。"}
           </p>
         </div>
       ) : (
@@ -165,35 +211,41 @@ function Library() {
           {contents.map((n, i) => (
             <li
               key={n.id}
-              className="bg-card rounded-[20px] p-4 border border-divider/60 shadow-soft animate-fade-up"
+              className="animate-fade-up"
               style={{ animationDelay: `${i * 50}ms` }}
             >
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="text-[15.5px] font-semibold text-foreground leading-tight flex-1">
-                  {getTitle(n)}
-                </h3>
-                <StatusPill status={n.status} />
-              </div>
-              <p className="text-[13px] text-muted-foreground leading-snug mt-1.5 line-clamp-2">
-                {getPreview(n)}
-              </p>
-              <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground mt-2">
-                <span>{sourceLabel(n.source_type)}</span>
-                <span>·</span>
-                <span>{formatDate(n.created_at)}</span>
-              </div>
-              {n.dna_tags && n.dna_tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {n.dna_tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-[10.5px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+              <Link
+                to="/content/$id"
+                params={{ id: n.id }}
+                className="block bg-card rounded-[20px] p-4 border border-divider/60 shadow-soft active:scale-[0.99] transition"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-[15.5px] font-semibold text-foreground leading-tight flex-1">
+                    {getTitle(n)}
+                  </h3>
+                  <StatusPill status={n.status} />
                 </div>
-              )}
+                <p className="text-[13px] text-muted-foreground leading-snug mt-1.5 line-clamp-2">
+                  {getPreview(n)}
+                </p>
+                <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground mt-2">
+                  <span>{sourceLabel(n.source_type)}</span>
+                  <span>·</span>
+                  <span>{formatDate(n.created_at)}</span>
+                </div>
+                {n.dna_tags && n.dna_tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {n.dna_tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10.5px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </Link>
             </li>
           ))}
         </ul>
@@ -206,13 +258,13 @@ function StatusPill({ status }: { status: string }) {
   const isPub = status === "published";
   return (
     <span
-      className="text-[10.5px] font-semibold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full"
+      className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full shrink-0"
       style={{
         color: isPub ? "#5A7F3D" : "#B0770D",
         background: isPub ? "#EEF3E8" : "#FFF3D2",
       }}
     >
-      {isPub ? "Published" : "Draft"}
+      {isPub ? "已发布" : "草稿"}
     </span>
   );
 }
